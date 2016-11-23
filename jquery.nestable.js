@@ -42,7 +42,8 @@
             collapseBtnHTML : '<button data-action="collapse" type="button">Collapse</button>',
             group           : 0,
             maxDepth        : 5,
-            threshold       : 20
+            threshold       : 20,
+            acrossLevel:false
         };
 
     function Plugin(element, options)
@@ -253,6 +254,7 @@
                 target   = $(e.target),
                 dragItem = target.closest(this.options.itemNodeName);
 
+            this.startEl=target;
             this.placeEl.css('height', dragItem.height());
 
             mouse.offsetX = e.offsetX !== undefined ? e.offsetX : e.pageX - target.offset().left;
@@ -330,6 +332,7 @@
 
             // do nothing on first move
             if (!mouse.moving) {
+                this.startEl=$(e.target);
                 mouse.dirAx  = newAx;
                 mouse.moving = true;
                 return;
@@ -350,7 +353,17 @@
                 }
             }
             mouse.dirAx = newAx;
+            if(!opt.acrossLevel) {
+                var closestRootElLevel = $(document.elementFromPoint(e.pageX - document.body.scrollLeft, e.pageY - (window.pageYOffset || document.documentElement.scrollTop))).closest('.' + opt.listClass).data('nestable-level');
 
+                var targetRootElLevel = $(this.startEl).closest('.' + opt.listClass).data('nestable-level');
+
+                if (closestRootElLevel != targetRootElLevel)
+                    return;
+                else if ((closestRootElLevel == targetRootElLevel) && (mouse.dirAx && mouse.distAxX >= opt.threshold)) {
+                    return;
+                }
+            }
             /**
              * move horizontal
              */
@@ -413,7 +426,8 @@
             }
 
             // find parent list of item under cursor
-            var pointElRoot = this.pointEl.closest('.' + opt.rootClass),
+            var
+                pointElRoot = this.pointEl.closest('.' + opt.rootClass),
                 isNewRoot   = this.dragRootEl.data('nestable-id') !== pointElRoot.data('nestable-id');
 
             /**
@@ -453,6 +467,7 @@
                 if (isNewRoot) {
                     this.dragRootEl = pointElRoot;
                     this.hasNewRoot = this.el[0] !== this.dragRootEl[0];
+
                 }
             }
         }
@@ -463,7 +478,7 @@
     {
         var lists  = this,
             retval = this;
-
+        params=params||{};
         lists.each(function()
         {
             var plugin = $(this).data("nestable");
@@ -471,6 +486,9 @@
             if (!plugin) {
                 $(this).data("nestable", new Plugin(this, params));
                 $(this).data("nestable-id", new Date().getTime());
+                $(this).find('.'+(params.listClass||'dd-list')).each(function (index,element) {
+                    $(element).data('nestable-level',index);
+                })
             } else {
                 if (typeof params === 'string' && typeof plugin[params] === 'function') {
                     retval = plugin[params]();
