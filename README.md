@@ -87,6 +87,10 @@ These advanced config options are also available:
 
 ## Change Log
 
+### 23th November 2016
+
+* Support acrossLevel switch
+
 ### 15th October 2012
 
 * Merge for Zepto.js support
